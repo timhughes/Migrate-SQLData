@@ -40,7 +40,7 @@
     TransformName = "ToUpperTransform"  # Name of the transformation function
 
     # Other settings
-    LogFilePath = "MigrateSQLData_Instance1_{0}.log" # Log file path with date and instance identifier
+    LogFilePath = "Migrate-SQLData_Instance1_{0}.log" # Log file path with date and instance identifier
     BatchSize = 5000  # Number of rows to insert in each batch
     CommandTimeout = 60  # Timeout for SQL commands in seconds
     Verbose = $false   # Whether to output verbose logs

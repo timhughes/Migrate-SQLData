@@ -9,8 +9,8 @@
     It supports the following tasks:
 
     * Test: Runs the Pester unit tests.
-    * Deploy: Copies the module and transform scripts to the target environment.
-    * Migrate: Executes the data migration process.
+    * Deploy: Copies the module, transform scripts, and wrapper script to the target environment.
+    * Migrate: Executes the data migration process (using the wrapper script).
 
 .PARAMETER ConfigFile
     The path to the configuration file (optional). If not specified, the "Migrate"
@@ -38,9 +38,17 @@ Param(
     [string]$Task = "Migrate"  # Default task is "Migrate"
 )
 
+# Target directory for deployment
+$targetDir = "C:\Target\Directory"
+
+function Lint{
+    Test-ModuleManifest -Path  ./MigrateSQLData/MigrateSQLData.psd1
+    Invoke-ScriptAnalyzer -Path . -Settings PSGallery -Recurse
+}
+
 # Test task to run Pester tests
 function Test {
-    Invoke-Pester .\Tests\MigrateSQLData.Tests.ps1
+    Invoke-Pester .\Tests\MigrateSQLData.Tests.ps1 -PassThru  -Output Diagnostic
 }
 
 # Deploy task to copy files to the target environment
@@ -48,14 +56,18 @@ function Deploy {
     Test  # Call the Test function first
 
     # Create the target directory if it doesn't exist
-    $targetDir = "C:\Target\Directory"
     if (!(Test-Path $targetDir)) {
         New-Item -ItemType Directory -Path $targetDir | Out-Null
     }
 
-    # Copy the module and transform scripts to the target environment
-    Copy-Item ".\Public\*" -Destination $targetDir -Recurse
-    Copy-Item ".\Transforms\*" -Destination (Join-Path $targetDir "Transforms") -Recurse
+    # Copy the module files, transform scripts, and wrapper script to the target environment
+    ### Commented out for the time being
+    # Copy-Item ".\MigrateSQLData.psm1" -Destination $targetDir
+    # Copy-Item ".\MigrateSQLData.psd1" -Destination $targetDir
+    # Copy-Item ".\src\Public\*" -Destination (Join-Path $targetDir "Public") -Recurse
+    # Copy-Item ".\src\Private\*" -Destination (Join-Path $targetDir "Private") -Recurse
+    # Copy-Item ".\src\Transforms\*" -Destination (Join-Path $targetDir "Transforms") -Recurse
+    # Copy-Item ".\Scripts\*" -Destination (Join-Path $targetDir "Scripts") -Recurse # Copy wrapper script
 }
 
 # Migrate task to execute the data migration
@@ -64,7 +76,7 @@ function Migrate {
 
     # Load project settings if ConfigFile is provided
     if ($ConfigFile) {
-        $settings = Import-PowerShellDataFile -Path ".\Config\$ConfigFile"
+        $settings = Import-PowerShellDataFile -Path "$ConfigFile"
         $SourceServer = $settings.SourceServer
         $SourceDatabase = $settings.SourceDatabase
         $SourceQuery = $settings.SourceQuery
@@ -83,6 +95,9 @@ function Migrate {
         return
     }
 
+    # Construct the path to the wrapper script
+    $wrapperScriptPath = Join-Path $targetDir "Scripts\Invoke-SqlDataMigration.ps1"
+
     # Construct a more specific prompt message
     $promptMessage = "Are you sure you want to migrate data from '{0}'.'{1}' to '{2}'.'{3}'? (y/n)" -f $SourceServer, $SourceDatabase, $DestinationServer, $DestinationDatabase
 
@@ -92,25 +107,25 @@ function Migrate {
         return
     }
 
-    # Run the Migrate-SQLData function with the specified parameters
-    Import-Module (Join-Path "C:\Target\Directory" "MigrateSQLData.psm1")
-    Migrate-SQLData -SourceServer $SourceServer `
-                    -SourceDatabase $SourceDatabase `
-                    -SourceQuery $SourceQuery `
-                    -DestinationServer $DestinationServer `
-                    -DestinationDatabase $DestinationDatabase `
-                    -DestinationTable $DestinationTable `
-                    -SourceWindowsAuthentication:$SourceWindowsAuthentication `
-                    -DestinationWindowsAuthentication:$DestinationWindowsAuthentication `
-                    -TransformName $TransformName `
-                    -LogFilePath $LogFilePath `
-                    -BatchSize $BatchSize `
-                    -CommandTimeout $CommandTimeout `
-                    -Verbose:$Verbose
+    # Invoke the wrapper script with the parameters
+    & $wrapperScriptPath -SourceServer $SourceServer `
+                         -SourceDatabase $SourceDatabase `
+                         -SourceQuery $SourceQuery `
+                         -DestinationServer $DestinationServer `
+                         -DestinationDatabase $DestinationDatabase `
+                         -DestinationTable $DestinationTable `
+                         -SourceWindowsAuthentication:$SourceWindowsAuthentication `
+                         -DestinationWindowsAuthentication:$DestinationWindowsAuthentication `
+                         -TransformName $TransformName `
+                         -LogFilePath $LogFilePath `
+                         -BatchSize $BatchSize `
+                         -CommandTimeout $CommandTimeout `
+                         -Verbose:$Verbose
 }
 
 # Invoke the specified task
 switch ($Task) {
+    "Lint" { Lint }
     "Test" { Test }
     "Deploy" { Deploy }
     "Migrate" { Migrate }

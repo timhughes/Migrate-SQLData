@@ -1,5 +1,3 @@
-# Public/Migrate-SQLData.ps1
-
 <#
 .SYNOPSIS
     Migrates data from one SQL Server database to another.
@@ -49,7 +47,7 @@
     The name of the transformation function to apply (from the "Transforms" folder).
 
 .PARAMETER LogFilePath
-    The path to the log file. Defaults to "MigrateSQLData_yyyyMMdd.log".
+    The path to the log file. Defaults to "Copy-SQLData_yyyyMMdd.log".
 
 .PARAMETER BatchSize
     The batch size for bulk insert. Defaults to 1000.
@@ -61,7 +59,7 @@
     Output verbose log messages.
 
 .EXAMPLE
-    Migrate-SQLData -SourceServer "SourceServer" -SourceDatabase "SourceDB" -SourceQuery "SELECT * FROM SourceTable" `
+    Copy-SQLData -SourceServer "SourceServer" -SourceDatabase "SourceDB" -SourceQuery "SELECT * FROM SourceTable" `
                     -DestinationServer "DestServer" -DestinationDatabase "DestDB" -DestinationTable "DestTable" `
                     -SourceWindowsAuthentication -DestinationWindowsAuthentication -TransformName "ToUpperTransform"
 
@@ -73,8 +71,9 @@
     Make sure the "Transforms" folder is in the same directory as the module.
     Transformation functions should accept a DataTable and return the modified DataTable.
 #>
-function Migrate-SQLData {
+function Copy-SQLData {
     [CmdletBinding()]
+    [OutputType([psobject])]
     param(
         [Parameter(Mandatory = $true)]
         [string]$SourceServer,
@@ -83,9 +82,10 @@ function Migrate-SQLData {
         [string]$SourceDatabase,
 
         [Parameter(Mandatory = $true)]
+        [string]$SourceTable,
+
+        [Parameter(Mandatory = $true)]
         [string]$SourceQuery,
-
-
 
         [Parameter(Mandatory = $true)]
         [string]$DestinationServer,
@@ -96,47 +96,47 @@ function Migrate-SQLData {
         [Parameter(Mandatory = $true)]
         [string]$DestinationTable,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$SourceUser,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$SourcePassword,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [switch]$SourceWindowsAuthentication,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$DestinationUser,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$DestinationPassword,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [switch]$DestinationWindowsAuthentication,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$TransformName = "None",  # Default: no transformation
 
-        [Parameter(Mandatory = false)]
-        [string]$LogFilePath = "MigrateSQLData_{0}.log",  # Default log file path with date formatting
+        [Parameter(Mandatory = $false)]
+        [string]$LogFilePath = "Copy-SQLData_{0}.log",  # Default log file path with date formatting
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [int]$BatchSize = 1000,  # Default batch size
 
-        [Parameter(Mandatory = false)]
-        [int]$CommandTimeout = 30,  # Default command timeout in seconds
+        [Parameter(Mandatory = $false)]
+        [int]$CommandTimeout = 30  # Default command timeout in seconds
 
-        [Parameter(Mandatory = false)]
-        [switch]$Verbose  # Verbose logging switch
+        # [Parameter(Mandatory = $false)]
+        # [switch]$Verbose  # Verbose logging switch
     )
 
     # Start logging with date in the file name
-    $LogTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogTimeFormat = "yyyy-MM-dd HH:mm:ss"
     $LogFilePath = $LogFilePath -f (Get-Date -Format "yyyyMMdd") # Format the date as yyyyMMdd
 
     # Define logging functions
-    $LogVerbose = if ($Verbose) { { param($Message) Add-Content -Path $LogFilePath -Value "[$LogTime] $Message" } } else { { } } # Empty scriptblock if not verbose
-    $Log = { param($Message) Add-Content -Path $LogFilePath -Value "[$LogTime] $Message" }
+    $LogVerbose = if ($Verbose) { { param($Message) Add-Content -Path $LogFilePath -Value "[$(Get-Date -Format $LogTimeFormat)] $Message" } } else { { } } # Empty scriptblock if not verbose
+    $Log = { param($Message) Add-Content -Path $LogFilePath -Value "[$(Get-Date -Format $LogTimeFormat)] $Message" }
 
     # Log start message
     & $Log "Starting data migration..."
@@ -220,11 +220,15 @@ function Migrate-SQLData {
     }
     catch {
         $ErrorMessage = $_.Exception.Message
-        Add-Content -Path $LogFilePath -Value "[$LogTime] ERROR: $ErrorMessage"
-        Write-Error $ErrorMessage
+        & $Log "ERROR: $ErrorMessage"
+        # Write-Error "ERROR: $ErrorMessage"
+        # Write-Error  $_.Exception
+        # Write-Error
+        Write-Error  $_
     }
     finally {
         if ($SourceConnection -ne $null) { $SourceConnection.Close() }
         if ($DestinationConnection -ne $null) { $DestinationConnection.Close() }
     }
 }
+

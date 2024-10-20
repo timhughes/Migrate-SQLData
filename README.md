@@ -1,4 +1,4 @@
-# MigrateSQLData
+# Migrate-SQLData
 
 This PowerShell module provides a function to migrate data from one SQL Server database to another. It supports various features like:
 
@@ -12,27 +12,37 @@ This PowerShell module provides a function to migrate data from one SQL Server d
 
 ## File Structure
 ```
-MigrateSQLData/
-├── Public/
-│   └── Migrate-SQLData.ps1
-├── Private/
-│   ├── Get-SqlConnection.ps1
-│   ├── Get-SQLData.ps1
-│   └── Invoke-DataTransformation.ps1
-│   └── Write-SQLData.ps1
+Migrate-SQLData/
+├── build.ps1
+├── Config/
+│   └── migration_instance1.psd1
+├── Invoke-SqlDataMigration.ps1
+├── LICENSE
+├── Migrate-SQLData.psd1
+├── Migrate-SQLData.psm1
+├── src/
+│   ├── Public/
+│   │   └── Migrate-SQLData.ps1
+│   ├── Private/
+│   │   ├── Get-SqlConnection.ps1
+│   │   ├── Get-SQLData.ps1
+│   │   ├── Invoke-DataTransformation.ps1
+│   │   └── Write-SQLData.ps1
+│   ├── Scripts/
+│   │   └── Invoke-SqlDataMigration.ps1
+│   └── Transforms/
+│       └── ToUpperTransform.ps1
 ├── Tests/
-│   └── MigrateSQLData.Tests.ps1
-├── Transforms/
-│   └── ToUpperTransform.ps1  # Example transformation
-└── build.ps1
+│   └── Migrate-SQLData.Tests.ps1
+└── README.md
 ```
 
-
-*   `Public`: Contains the main `Migrate-SQLData` function.
-*   `Private`: Holds internal helper functions.
-*   `Tests`: Contains Pester unit tests.
-*   `Transforms`: Holds transformation scripts.
-*   `build.ps1`: The build script for testing, deploying, and migrating.
+* `Migrate-SQLData.psm1`: The PowerShell module file.
+* `Migrate-SQLData.psd1`: The module manifest file.
+* `src`: The directory containing the source code, including transformations in `src/Transforms`.
+* `Tests`: Contains Pester unit tests.
+* `build.ps1`: The build script for testing, deploying, and migrating.
+* `Invoke-SqlDataMigration.ps1`: A wrapper script to simplify migration execution.
 
 ## Prerequisites
 
@@ -43,7 +53,7 @@ MigrateSQLData/
 ## Installation
 
 1.  Clone this repository or download the files.
-2.  Place the `MigrateSQLData` folder in your PowerShell module path. You can find your module paths by running `$env:PSModulePath`.
+2.  Place the `Migrate-SQLData` folder in your PowerShell module path. You can find your module paths by running `$env:PSModulePath`.
 
 ## Usage
 
@@ -54,7 +64,7 @@ MigrateSQLData/
 
 ### 2. Running the Migration
 
-*   Open PowerShell and navigate to the `MigrateSQLData` directory.
+*   Open PowerShell and navigate to the `Migrate-SQLData` directory.
 *   Run the `build.ps1` script with the `-ConfigFile` parameter:
 
 ```powershell
@@ -72,7 +82,10 @@ MigrateSQLData/
 ```powershell
 .\build.ps1 -Task Test
 ```
-
+* To deploy the module and scripts without migrating data:
+```powershell
+.\build.ps1 -Task Deploy
+```
 
 ## Transformations
 
@@ -80,10 +93,11 @@ MigrateSQLData/
   * Each script should contain a function that accepts a `DataTable` as input and returns the modified `DataTable`.
   * Specify the `TransformName` parameter in the configuration file to apply a transformation during migration.
 
+
 ## Logging
 
   * The `Migrate-SQLData` function handles logging.
-  * Log files are created with the pattern `MigrateSQLData_yyyyMMdd.log`.
+  * Log files are created with the pattern `Migrate-SQLData_yyyyMMdd.log`.
 
 ## Contributing
 

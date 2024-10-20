@@ -1,0 +1,53 @@
+name: Test Migrate-SQLData
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  Run-PSScriptAnalyzer-on-Windows:
+    name: Run PSScriptAnalyzer on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PSScriptAnalyzer module
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -ErrorAction Stop
+      - name: Lint with PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Invoke-ScriptAnalyzer -Path *.ps1 -Recurse -Outvariable issues -Settings PSGallery
+          $errors   = $issues.Where({$_.Severity -eq 'Error'})
+          $warnings = $issues.Where({$_.Severity -eq 'Warning'})
+          if ($errors) {
+              Write-Error "There were $($errors.Count) errors and $($warnings.Count) warnings total." -ErrorAction Stop
+          } else {
+              Write-Output "There were $($errors.Count) errors and $($warnings.Count) warnings total."
+          }
+  Run-Pester-on-Windows:
+    name: Run Pester on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      #- name: Install Pester
+      #  shell: pwsh
+      #  run: |
+      #    Set-PSRepository PSGallery -InstallationPolicy Trusted
+      #    Install-Module -Name Pester -Force
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          $conf = New-PesterConfiguration
+          $conf.Output.StackTraceVerbosity = "Full"
+          Invoke-Pester -Path .\Tests\ -Passthru | Export-CliXml -Path Unit.Tests.xml
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Unit-Tests
+          path: Unit.Tests.xml
+    if: ${{ always() }}

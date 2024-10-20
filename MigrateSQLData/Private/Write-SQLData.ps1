@@ -39,10 +39,10 @@ function Write-SQLData {
         [Parameter(Mandatory = $true)]
         [System.Data.DataTable]$DataTable,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [int]$BatchSize = 1000,  # Default batch size
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [int]$CommandTimeout = 30  # Default command timeout in seconds
     )
 

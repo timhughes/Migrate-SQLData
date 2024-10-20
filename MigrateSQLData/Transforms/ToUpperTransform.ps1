@@ -1,5 +1,5 @@
 # Transforms/ToUpperTransform.ps1
-function ToUpper-Column {
+function Convert-Column {
     param(
         [Parameter(Mandatory = $true)]
         [System.Data.DataTable]$DataTable,

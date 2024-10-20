@@ -39,13 +39,13 @@ function Get-SqlConnection {
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$User,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [string]$Password,
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = $false)]
         [switch]$WindowsAuthentication
     )
 

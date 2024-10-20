@@ -1,5 +1,3 @@
-# Private/Invoke-DataTransformation.ps1
-
 <#
 .SYNOPSIS
     Applies a specified data transformation to a DataTable.
@@ -35,8 +33,8 @@ function Invoke-DataTransformation {
         [Parameter(Mandatory = $true)]
         [System.Data.DataTable]$DataTable,
 
-        [Parameter(Mandatory = false)]
-        [string]$TransformName = "None"
+        [Parameter(Mandatory = $false)]
+        [string]$TransformName = $false
     )
 
     # Load transformations from external ps1 files in the Transforms folder

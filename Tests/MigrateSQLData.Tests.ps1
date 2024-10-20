@@ -1,11 +1,21 @@
-# MigrateSQLData.Tests.ps1
+# Migrate-SQLData.Tests.ps1
 
 # Requires the Pester testing framework
 # Install it using: Install-Module Pester
 
 # Use $PSScriptRoot to get the module directory
-$modulePath = Join-Path $PSScriptRoot "..\Public\Migrate-SQLData.psm1"
-Import-Module $modulePath
+# $modulePath = Join-Path $PSScriptRoot "..\MigrateSQLData.psm1"
+# Write-Output "modulePath: $modulePath"
+# Write-Output "PSModulePath: $env:PSModulePath"
+# Import-Module $modulePath
+# Import-Module "..\MigrateSQLData.psm1"
+# $env:PSModulePath = $env:PSModulePath + ";$modulePath"
+# Import-Module MigrateSQLData
+
+$moduleRoot = Resolve-Path "$PSScriptRoot\.."
+$moduleName = "MigrateSQLData" # Split-Path $moduleRoot -Leaf
+$env:PSModulePath = $env:PSModulePath + ":$moduleRoot"
+
 
 # Mock the database connections and commands to avoid actual database access
 Mock Get-SqlConnection {
@@ -60,96 +70,103 @@ Mock New-Counter {
     # Do nothing (mock publishing metrics)
 }
 
-Describe "Migrate-SQLData" {
-
+Describe "Copy-SQLData" {
+    
     It "should migrate data with no transformation" {
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceWindowsAuthentication `
                         -DestinationWindowsAuthentication `
-                        -LogFilePath "TestLog.log" | Should -Not -Throw
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log" }| Should -Not -Throw
     }
 
     It "should migrate data with a valid transformation" {
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceWindowsAuthentication `
                         -DestinationWindowsAuthentication `
-                        -TransformName "ToUpperTransform" `
-                        -LogFilePath "TestLog.log" | Should -Not -Throw
+                        -TransformName "Convert-Column" `
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log" }| Should -Not -Throw
     }
 
     It "should handle an invalid transformation name" {
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceWindowsAuthentication `
                         -DestinationWindowsAuthentication `
-                        -TransformName "InvalidTransform" `
-                        -LogFilePath "TestLog.log" | Should -Not -Throw
+                        -TransformName "Convert-Column" `
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log"} | Should -Not -Throw
     }
 
     It "should migrate data with source Windows Authentication" {
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceWindowsAuthentication `
                         -DestinationUser "TestDestUser" `
                         -DestinationPassword "TestDestPassword" `
-                        -LogFilePath "TestLog.log" | Should -Not -Throw
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log"} | Should -Not -Throw
     }
 
     It "should migrate data with destination Windows Authentication" {
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceUser "TestSourceUser" `
                         -SourcePassword "TestSourcePassword" `
                         -DestinationWindowsAuthentication `
-                        -LogFilePath "TestLog.log" | Should -Not -Throw
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log"} | Should -Not -Throw
     }
 
     It "should migrate data with both source and destination Windows Authentication" {
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceWindowsAuthentication `
                         -DestinationWindowsAuthentication `
-                        -LogFilePath "TestLog.log" | Should -Not -Throw
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log"} | Should -Not -Throw
     }
 
     It "should log verbose messages when -Verbose is specified" {
         # Use Should -Invoke to verify that Add-Content is called with the expected messages
-        Migrate-SQLData -SourceServer "TestSourceServer" `
+        {Copy-SQLData -SourceServer "TestSourceServer" `
                         -SourceDatabase "TestSourceDB" `
                         -SourceTable "TestSourceTable" `
+                        -SourceQuery "SELECT 1" `
                         -DestinationServer "TestDestServer" `
                         -DestinationDatabase "TestDestDB" `
                         -DestinationTable "TestDestTable" `
                         -SourceWindowsAuthentication `
                         -DestinationWindowsAuthentication `
-                        -LogFilePath "TestLog.log" `
-                        -Verbose | Should -Invoke Add-Content -WithArguments @("TestLog.log", "*Connected to source server:*")
+                        -LogFilePath "Migrate-SQLData_Instance1_{0}.log" `
+                        -Verbose} | Should -Invoke Add-Content -WithArguments @("Migrate-SQLData_Instance1_{0}.log", "*Connected to source server:*")
 
         # Add more Should -Invoke assertions for other verbose log messages as needed
     }
