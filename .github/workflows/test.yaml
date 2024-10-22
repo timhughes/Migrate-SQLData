@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         run: |
           $conf = New-PesterConfiguration
-          $conf.Output.StackTraceVerbosity = Full
+          $conf.Output.StackTraceVerbosity = "Full"
           Invoke-Pester -Path .\Tests\ -Passthru | Export-CliXml -Path Unit.Tests.xml
       - name: Upload test results
         uses: actions/upload-artifact@v4
